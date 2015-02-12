@@ -19,7 +19,7 @@ cd ..
 ./serve.sh
 
 Now open a web browser and go to :
-http://localhost:8000/samples/BB-is-watching-you.html
+[http://localhost:8000/samples/BB-is-watching-you/BB-is-watching-you.html](http://localhost:8000/samples/BB-is-watching-you/BB-is-watching-you.html)
 
 Allow the camera and enjoy.
 
@@ -31,4 +31,4 @@ Rename them from output0.mp3 to output5.mp3 and but them is the directory
   wget -q -U Mozilla -O output.mp3 "http://translate.google.com/translate_tts?ie=UTF-8&tl=en&q=Hello you!"
 
 Alternatively, just launch the script download.sh to get the joke I did to my flatmate!
-  download.sh
+  ./download.sh
