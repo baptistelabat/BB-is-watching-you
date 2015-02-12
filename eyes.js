@@ -116,9 +116,10 @@ Eyeball.prototype = {
 			if( Math.abs( x1 - this.startX ) > this.max ||  Math.abs( y1 - this.startY ) > this.max ){
 				
 				var angle = Math.atan2( y1 - ( this.startY + this.canvasY ) , x1 - ( this.startX + this.canvasX ) );
+				var distance = Math.hypot((y1 - ( this.startY + this.canvasY )), (x1 - ( this.startX + this.canvasX )));
 					
-					var movX = Math.cos( angle ) * this.max;
-					var movY = Math.sin( angle ) * this.max;
+					var movX = Math.cos( angle ) * Math.sin(Math.atan2(distance, 300))*this.max;
+					var movY = Math.sin( angle ) * Math.sin(Math.atan2(distance, 300))*this.max;
 					
 					this.x = this.startX + movX;
 					this.y = this.startY + movY;
@@ -212,15 +213,14 @@ function Guy( options ){
 			g.lineCap = 'round';
 	
 	
-	window.addEventListener( 'mousemove', function( ev ){
-		
-		var x = ev.pageX,
-			y = ev.pageY;
+	window.addEventListener( 'camMotion', function( ev ){
+		var x = ev.detail.x + window.scrollX,
+			y = ev.detail.y + window.scrollY;
 			
-			if( that.options.position !== undefined && that.options.position === 'fixed' ){
-				 	x = ev.pageX - (window.scrollX || 0);
-					y = ev.pageY - (window.scrollY || 0);
-			}
+			/*if( that.options.position !== undefined && that.options.position === 'fixed' ){
+				 	x = ev.x - (window.scrollX || 0);
+					y = ev.y - (window.scrollY || 0);
+			}*/
 
 
 
