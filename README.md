@@ -24,7 +24,7 @@ Go back to root directory and launch server
 Now open a web browser and go to :
 [http://localhost:8000/samples/BB-is-watching-you/BB-is-watching-you.html](http://localhost:8000/samples/BB-is-watching-you/BB-is-watching-you.html)
 
-Allow the camera and enjoy.
+Allow the camera (worked on chromium but not firefox for me) and enjoy.
 
 You want more?
 --------------
