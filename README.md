@@ -36,3 +36,9 @@ Rename them from output0.mp3 to output5.mp3 and put them in the directory
 Alternatively, just launch the script download.sh to get the joke I did to my flatmate!
 
     ./download.sh
+    
+Aknowledgements
+--------------
+Emin Kura for sharing its [smilley following mouse](http://eminkura.com/blog/2012/03/04/following-eyes-with-html5-canvas/)
+[Tjerk Wolterink](https://github.com/tjerkw) for sharing js-cam-motion
+
