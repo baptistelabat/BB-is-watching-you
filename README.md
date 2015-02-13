@@ -1,5 +1,5 @@
 # BB-is-watching-you
-A big smilley in a web page looking at you thanks to the webcam
+A big smilley in a web page looking at you thanks to the webcam. See the [online demo](http://www.nautilabs.com/js-cam-motion/samples/BB-is-watching-you/BB-is-watching-you.html)
 
 Installation
 -------------
