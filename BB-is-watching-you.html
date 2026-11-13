@@ -76,6 +76,9 @@
 			var ex = e && e.exception;
 			if (ex && (ex.name === "NotAllowedError" || ex.name === "SecurityError")) {
 				setStatus("Camera access was denied. Allow it in the browser and try again.");
+			} else if (ex && (ex.name === "NotReadableError" || ex.name === "AbortError")) {
+				setStatus("The camera could not be opened: it is probably used by another program or " +
+					"browser tab (close Chromium, video calls...), then try again.");
 			} else if (ex && ex.name === "NotFoundError") {
 				setStatus("No camera was found.");
 			} else {

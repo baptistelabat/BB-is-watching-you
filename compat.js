@@ -58,9 +58,18 @@ var CamMotionCompat = (function () {
 			}
 			// Only ask for the camera: the microphone is not needed, and asking
 			// for less is both safer and more likely to be granted.
-			navigator.mediaDevices.getUserMedia({
-				audio: false,
-				video: { width: { ideal: width }, height: { ideal: height } }
+			var preferred = { audio: false, video: { width: { ideal: width }, height: { ideal: height } } };
+			navigator.mediaDevices.getUserMedia(preferred).catch(function (e) {
+				// Some cameras/browsers (e.g. Firefox on Linux) fail with
+				// NotReadableError or OverconstrainedError on a size request:
+				// retry once with the camera's default settings.
+				if (e && (e.name === "NotReadableError" || e.name === "OverconstrainedError" || e.name === "AbortError")) {
+					console.warn("camera failed with preferred size, retrying with defaults", e);
+					return new Promise(function (r) { setTimeout(r, 500); }).then(function () {
+						return navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+					});
+				}
+				throw e;
 			}).then(function (stream) {
 				video.srcObject = stream;
 				video.onloadedmetadata = function () {
