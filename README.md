@@ -1,30 +1,23 @@
 # BB-is-watching-you
 A big smilley in a web page looking at you thanks to the webcam. See the [online demo](http://www.nautilabs.com/js-cam-motion/samples/BB-is-watching-you/BB-is-watching-you.html)
 
-Installation
+Online
 -------------
+Once GitHub Pages is enabled for this repository (Settings > Pages > Deploy from a branch, `master` / root),
+open [https://baptistelabat.github.io/BB-is-watching-you/](https://baptistelabat.github.io/BB-is-watching-you/),
+click "Start the camera" and allow the camera.
 
-First clone or download js-cam-motion library
+Run locally
+-------------
+The [js-cam-motion](https://github.com/tjerkw/js-cam-motion) library is bundled in `lib/js-cam-motion`, so just clone and serve the repository:
 
-    git clone https://github.com/tjerkw/js-cam-motion.git
-  
-Then go to samples file and clone BB-is-watching-you
-
-    cd js-cam-motion
-    cd samples
     git clone https://github.com/baptistelabat/BB-is-watching-you.git
-
-Use
--------
-Go back to the js-cam-motion root directory and launch a local web server
-
-    cd ..
+    cd BB-is-watching-you
     python3 -m http.server 8000
 
-Now open a web browser and go to :
-[http://localhost:8000/samples/BB-is-watching-you/BB-is-watching-you.html](http://localhost:8000/samples/BB-is-watching-you/BB-is-watching-you.html)
-
-Click "Start the camera", allow the camera and enjoy (tested on Chromium; Firefox should work too).
+Now open a web browser and go to
+[http://localhost:8000/BB-is-watching-you.html](http://localhost:8000/BB-is-watching-you.html),
+click "Start the camera", allow the camera and enjoy.
 
 Browser security notes:
 - Browsers only give camera access to secure pages: open the page from `http://localhost` or over `https://`.
@@ -43,6 +36,8 @@ Rename them from output0.mp3 to output5.mp3 and put them in the directory
 Alternatively, just launch the script download.sh to get the joke I did to my flatmate!
 
     ./download.sh
+
+To have the voices online too, commit the mp3 files and push them.
     
 Aknowledgements
 --------------
