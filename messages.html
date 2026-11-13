@@ -13,6 +13,7 @@
 		button, select { font-size: 1em; padding: 0.4em 0.8em; cursor: pointer; }
 		.actions { margin-top: 1.2em; display: flex; flex-wrap: wrap; gap: 0.5em; }
 		#status { margin-top: 1em; min-height: 1.2em; color: #060; }
+		#status.error { color: #b00; }
 		#share { width: 100%; margin-top: 0.5em; font-size: 0.85em; padding: 0.4em; box-sizing: border-box; }
 		.hint { color: #555; font-size: 0.9em; }
 	</style>
@@ -35,6 +36,7 @@
 		</div>
 	</form>
 	<div id="status"></div>
+	<p class="hint" id="voices-info"></p>
 
 	<p class="hint">Les messages sont enregistrés dans ce navigateur. Pour les utiliser sur un autre appareil, ouvre ce lien&nbsp;:</p>
 	<input id="share" readonly>
@@ -68,8 +70,16 @@
 		document.getElementById("share").value = Messages.shareUrl(current(), "BB-is-watching-you.html");
 	}
 
+	function setStatus(msg, isError) {
+		statusEl.textContent = msg;
+		statusEl.className = isError ? "error" : "";
+	}
+
 	function fillVoices() {
 		var voices = Messages.frenchVoices();
+		var all = Messages.supported() ? window.speechSynthesis.getVoices().length : 0;
+		document.getElementById("voices-info").textContent =
+			"Voix disponibles dans ce navigateur : " + voices.length + " française(s) sur " + all + ".";
 		voiceSelect.innerHTML = "";
 		if (!voices.length) {
 			voiceSelect.add(new Option(Messages.supported() ? "Voix française par défaut" : "Synthèse vocale non disponible", ""));
@@ -84,14 +94,25 @@
 
 	function save() {
 		data = current();
-		statusEl.textContent = Messages.save(data) ? "Messages enregistrés." :
-			"Impossible d'enregistrer dans ce navigateur : utilise le lien ci-dessous.";
+		if (Messages.save(data)) {
+			setStatus("Messages enregistrés.");
+		} else {
+			setStatus("Impossible d'enregistrer dans ce navigateur : utilise le lien ci-dessous.", true);
+		}
 		updateShare();
 	}
 
 	rows.addEventListener("click", function (e) {
 		var i = e.target.getAttribute("data-i");
-		if (i !== null) { Messages.speak(document.getElementById("m" + i).value.trim(), voiceSelect.value); }
+		if (i === null) { return; }
+		var text = document.getElementById("m" + i).value.trim();
+		if (!text) { setStatus("Ce message est vide.", true); return; }
+		setStatus("Lecture…");
+		Messages.speak(text, voiceSelect.value, function (state, detail) {
+			if (state === "start") { setStatus("Lecture en cours…"); }
+			else if (state === "end") { setStatus("Lecture terminée. Tu n'as rien entendu ? " + Messages.voiceHint(), false); }
+			else { setStatus(Messages.describe(state, detail), true); }
+		});
 	});
 	rows.addEventListener("input", updateShare);
 	voiceSelect.addEventListener("change", updateShare);

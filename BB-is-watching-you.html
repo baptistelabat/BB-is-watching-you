@@ -7,6 +7,7 @@
 		#start-panel { position: absolute; left: 20px; top: 20px; z-index: 1000; font-family: sans-serif; }
 		#start-button { font-size: 1.4em; padding: 0.4em 1em; cursor: pointer; }
 		#edit-link { margin-left: 1em; }
+		#speech-status { position: fixed; left: 20px; bottom: 20px; z-index: 1000; font-family: sans-serif; color: #b00; max-width: 40em; }
 		#status { margin-top: 0.5em; color: #b00; max-width: 40em; }
 	</style>
 </head>
@@ -16,6 +17,7 @@
 		<a id="edit-link" href="messages.html">Edit the messages</a>
 		<div id="status"></div>
 	</div>
+	<div id="speech-status"></div>
 	<canvas id="canvas-blended" width="1366" height="768"></canvas>
 
 	<script src="lib/js-cam-motion/circularbuffer.js"></script>
@@ -33,6 +35,14 @@
 
 	var guy = new Guy({ 'position': 'absolute', 'x': 350, 'y': 38, 'scale': 5 });
 
+	function reportSpeech(state, detail) {
+		var msg = Messages.describe(state, detail);
+		if (msg || state === "start") {
+			document.getElementById("speech-status").textContent = msg;
+		}
+	}
+	Messages.loadVoices();
+
 	function setStatus(msg) {
 		document.getElementById("status").textContent = msg || "";
 	}
@@ -47,7 +57,11 @@
 		var canvas = document.getElementById("canvas-blended");
 		var button = document.getElementById("start-button");
 		button.disabled = true;
-		Messages.unlock(); // speech must first be triggered from a click
+		// Browsers only allow speech that starts from a click: say the first
+		// message now, it also tells right away whether the sound works.
+		if (messages.length) {
+			Messages.speak(messages[0], settings.voice, reportSpeech);
+		}
 		setStatus("");
 
 		var camMotion = CamMotion.Engine({
@@ -74,17 +88,17 @@
 			document.getElementById("start-panel").style.display = "none";
 		});
 
-		var lastMessageTime = 0;
-		var i_message = 0;
+		var lastMessageTime = Date.now();
+		var i_message = messages.length > 1 ? 1 : 0;
 		camMotion.on("frame", function () {
 			var point = camMotion.getMovementPoint(true);
 			if (camMotion.getAverageMovement(point.x - point.r / 2, point.y - point.r / 2, point.r, point.r) > 2) {
 				window.dispatchEvent(new CustomEvent('camMotion', { detail: { x: point.x, y: point.y } }));
 
 				var now = Date.now();
-				if (messages.length && now - lastMessageTime > MESSAGE_DELAY && Messages.supported() && !window.speechSynthesis.speaking) {
+				if (messages.length && now - lastMessageTime > MESSAGE_DELAY && !Messages.isBusy()) {
 					lastMessageTime = now;
-					Messages.speak(messages[i_message], settings.voice);
+					Messages.speak(messages[i_message], settings.voice, reportSpeech);
 					i_message = (i_message + 1) % messages.length;
 				}
 			}
