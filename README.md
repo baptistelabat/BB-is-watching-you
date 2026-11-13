@@ -1,5 +1,7 @@
 # BB-is-watching-you
-A big smilley in a web page looking at you thanks to the webcam. See the [online demo](http://www.nautilabs.com/js-cam-motion/samples/BB-is-watching-you/BB-is-watching-you.html)
+A big smilley in a web page looking at you thanks to the webcam.
+
+**[Try it online: https://baptistelabat.github.io/BB-is-watching-you/](https://baptistelabat.github.io/BB-is-watching-you/)**
 
 Online
 -------------
@@ -28,6 +30,9 @@ Browser security notes:
 
 You want more?
 --------------
+When the smiley sees you move, it plays a voice message: `output0.mp3`, then `output1.mp3`, ... up to `output5.mp3`,
+then back to `output0.mp3`, with at least 3 seconds between two messages. The files are optional: without them it stays silent.
+
 Use the following command to download some audio files ( here a girl voice saying "hello you!").
 Rename them from output0.mp3 to output5.mp3 and put them in the directory
 
