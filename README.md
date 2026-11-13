@@ -42,6 +42,12 @@ Open [messages.html](https://baptistelabat.github.io/BB-is-watching-you/messages
 The available voices depend on the browser and the operating system. If no French voice is installed,
 the browser uses its default voice.
 
+On Linux, the browser gets its voices from speech-dispatcher:
+- check that it speaks: `spd-say -l fr bonjour` (if not, install `speech-dispatcher-espeak-ng`),
+- Google Chrome / Chromium must be started with `--enable-speech-dispatcher`
+  (close all its windows first), e.g. `google-chrome --enable-speech-dispatcher`,
+- Firefox installed as a snap or Flatpak may not reach speech-dispatcher from its sandbox.
+
 Aknowledgements
 --------------
 Emin Kura for sharing its [smilley following mouse](http://eminkura.com/blog/2012/03/04/following-eyes-with-html5-canvas/)
