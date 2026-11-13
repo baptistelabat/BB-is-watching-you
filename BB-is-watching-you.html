@@ -1,89 +1,101 @@
 <!DOCTYPE html>
 <html>
-<head><title>js-cam-motion: Simple Demo</title></head>
+<head>
+	<meta charset="utf-8">
+	<title>BB is watching you</title>
+	<style>
+		#start-panel { position: absolute; left: 20px; top: 20px; z-index: 1000; font-family: sans-serif; }
+		#start-button { font-size: 1.4em; padding: 0.4em 1em; cursor: pointer; }
+		#status { margin-top: 0.5em; color: #b00; max-width: 40em; }
+	</style>
+</head>
 <body>
+	<div id="start-panel">
+		<button id="start-button" type="button">Start the camera</button>
+		<div id="status"></div>
+	</div>
 	<canvas id="canvas-blended" width="1366" height="768"></canvas>
 
-	<script language="JavaScript" src="../../lib/circularbuffer.js"></script>
-	<script language="JavaScript" src="../../lib/events.js"></script>
-	<script language="JavaScript" src="../../lib/detectors.js"></script>
-	<script language="JavaScript" src="../../lib/main.js"></script>
+	<script src="lib/js-cam-motion/circularbuffer.js"></script>
+	<script src="lib/js-cam-motion/events.js"></script>
+	<script src="lib/js-cam-motion/detectors.js"></script>
+	<script src="lib/js-cam-motion/main.js"></script>
+	<script src="compat.js"></script>
 	<script src="eyes.js"></script>
-	<script language="JavaScript">
-			var guy = new Guy( {
-				     'position': 'absolute',
-     'x': 350,
-     'y': 38,
-     'scale': 5});
-	window.onload = function() {
+	<script>
+	var WIDTH = 1366, HEIGHT = 768;
+	var N_AUDIO = 6;          // output0.mp3 ... output5.mp3 (optional)
+	var AUDIO_DELAY = 3000;   // ms between two messages
+
+	var guy = new Guy({ 'position': 'absolute', 'x': 350, 'y': 38, 'scale': 5 });
+
+	function setStatus(msg) {
+		document.getElementById("status").textContent = msg || "";
+	}
+
+	function startEngine() {
+		var problem = CamMotionCompat.problem();
+		if (problem) {
+			setStatus(problem);
+			return;
+		}
 
 		var canvas = document.getElementById("canvas-blended");
+		var button = document.getElementById("start-button");
+		button.disabled = true;
+		setStatus("");
 
-		var ctx = canvas.getContext("2d");
-		//ctx.fillStyle = "#FF0000";
-		//ctx.strokeStyle = "#00FF00";
-		//ctx.lineWidth = 5;
-
-		console.log("Inintializing");
 		var camMotion = CamMotion.Engine({
+			videoNode: CamMotionCompat.install(WIDTH, HEIGHT),
 			canvasBlended: canvas,
-			width: 1366,
-			height: 768
+			width: WIDTH,
+			height: HEIGHT
 		});
-		console.log(camMotion);
+
 		camMotion.on("error", function (e) {
 			console.log("error", e);
-		});
-		console.log(camMotion);
-		camMotion.on("streamInit", function(e) {
-			console.log("webcam stream initialized", e);
-		});
-		camMotion.onMotion(CamMotion.Detectors.LeftMotion, function () {
-			console.log("AAAAAAAAAAAAAAAH Left motion detected");
-		});
-		camMotion.onMotion(CamMotion.Detectors.RightMotion, function () {
-			console.log("AAAAAAAAAAAAAAAH Right motion detected");
-		});
-		camMotion.onMotion(CamMotion.Detectors.DownMotion, function () {
-			console.log("AAAAAAAAAAAAAAAH Down motion detected");
-		});
-		camMotion.onMotion(CamMotion.Detectors.UpMotion, function () {
-			console.log("AAAAAAAAAAAAAAAH Up motion detected");
-		});
-		var d = new Date();
-		var lastMessageTime = 0;
-		var i_audio = 0
-		camMotion.on("frame", function () {
-
-			var point = camMotion.getMovementPoint(true);
-			var event = new CustomEvent('camMotion', { detail: {x:point.x, y:point.y} });
-
-			// draw a circle
-			/*ctx.beginPath();
-			ctx.arc(point.x, point.y, point.r, 0, Math.PI*2, true);
-			ctx.closePath();*/
-			if (camMotion.getAverageMovement(point.x-point.r/2, point.y-point.r/2, point.r, point.r)>2) {
-				//ctx.fill();
-			    // Dispatch the event.
-			    window.dispatchEvent(event);
-			    var audio = new Audio();
-				
-				var d = new Date();
-				console.log(d.getTime()-lastMessageTime);
-				if (d.getTime()-lastMessageTime>3000)
-				{ 
-					audio.src ='output'+ i_audio + '.mp3';
-					i_audio = (i_audio+1)%6;
-					lastMessageTime = d.getTime(); 
-					audio.play();
-				}
+			var ex = e && e.exception;
+			if (ex && (ex.name === "NotAllowedError" || ex.name === "SecurityError")) {
+				setStatus("Camera access was denied. Allow it in the browser and try again.");
+			} else if (ex && ex.name === "NotFoundError") {
+				setStatus("No camera was found.");
 			} else {
-				//ctx.stroke();
+				setStatus((e && e.msg) || "Could not start the camera.");
+			}
+			button.disabled = false;
+		});
+		camMotion.on("streamInit", function (e) {
+			console.log("webcam stream initialized", e);
+			document.getElementById("start-panel").style.display = "none";
+		});
+
+		var lastMessageTime = 0;
+		var i_audio = 0;
+		camMotion.on("frame", function () {
+			var point = camMotion.getMovementPoint(true);
+			if (camMotion.getAverageMovement(point.x - point.r / 2, point.y - point.r / 2, point.r, point.r) > 2) {
+				window.dispatchEvent(new CustomEvent('camMotion', { detail: { x: point.x, y: point.y } }));
+
+				var now = Date.now();
+				if (now - lastMessageTime > AUDIO_DELAY) {
+					lastMessageTime = now;
+					var audio = new Audio('output' + i_audio + '.mp3');
+					i_audio = (i_audio + 1) % N_AUDIO;
+					// Audio files are optional: ignore missing files / blocked playback.
+					var p = audio.play();
+					if (p && p.catch) { p.catch(function (err) { console.log("audio not played:", err.message); }); }
+				}
 			}
 		});
 		camMotion.start();
+	}
 
-	};
+	// Browsers only allow camera prompts and sound after a user action,
+	// so everything starts from this click.
+	document.getElementById("start-button").addEventListener("click", startEngine);
+	window.addEventListener("load", function () {
+		setStatus(CamMotionCompat.problem());
+	});
 	</script>
 </body>
 </html>
