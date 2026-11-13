@@ -28,22 +28,20 @@ Browser security notes:
 - `compat.js` adapts js-cam-motion (written for the old `getUserMedia` API) to the modern
   `navigator.mediaDevices.getUserMedia` API, and only asks for the camera, not the microphone.
 
-You want more?
+Messages (French voice)
 --------------
-When the smiley sees you move, it plays a voice message: `output0.mp3`, then `output1.mp3`, ... up to `output5.mp3`,
-then back to `output0.mp3`, with at least 3 seconds between two messages. The files are optional: without them it stays silent.
+When the smiley sees you move, it says a message with the browser's speech synthesis, in French,
+going through the 5 messages one after the other, with at least 3 seconds between two messages.
 
-Use the following command to download some audio files ( here a girl voice saying "hello you!").
-Rename them from output0.mp3 to output5.mp3 and put them in the directory
+Open [messages.html](https://baptistelabat.github.io/BB-is-watching-you/messages.html)
+(also linked from the main page as "Edit the messages") to:
+- write the 5 messages (leave one empty to skip it) and listen to them,
+- choose a French voice among the ones installed on your computer,
+- save them in this browser, or copy a link that carries the messages to use them on another device.
 
-    curl -sG -A Mozilla -o output0.mp3 "https://translate.google.com/translate_tts" -d ie=UTF-8 -d client=tw-ob -d tl=en --data-urlencode "q=Hello you!"
+The available voices depend on the browser and the operating system. If no French voice is installed,
+the browser uses its default voice.
 
-Alternatively, just launch the script download.sh to get the joke I did to my flatmate!
-
-    ./download.sh
-
-To have the voices online too, commit the mp3 files and push them.
-    
 Aknowledgements
 --------------
 Emin Kura for sharing its [smilley following mouse](http://eminkura.com/blog/2012/03/04/following-eyes-with-html5-canvas/)

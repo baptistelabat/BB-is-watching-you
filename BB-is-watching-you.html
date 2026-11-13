@@ -6,12 +6,14 @@
 	<style>
 		#start-panel { position: absolute; left: 20px; top: 20px; z-index: 1000; font-family: sans-serif; }
 		#start-button { font-size: 1.4em; padding: 0.4em 1em; cursor: pointer; }
+		#edit-link { margin-left: 1em; }
 		#status { margin-top: 0.5em; color: #b00; max-width: 40em; }
 	</style>
 </head>
 <body>
 	<div id="start-panel">
 		<button id="start-button" type="button">Start the camera</button>
+		<a id="edit-link" href="messages.html">Edit the messages</a>
 		<div id="status"></div>
 	</div>
 	<canvas id="canvas-blended" width="1366" height="768"></canvas>
@@ -21,11 +23,13 @@
 	<script src="lib/js-cam-motion/detectors.js"></script>
 	<script src="lib/js-cam-motion/main.js"></script>
 	<script src="compat.js"></script>
+	<script src="messages.js"></script>
 	<script src="eyes.js"></script>
 	<script>
 	var WIDTH = 1366, HEIGHT = 768;
-	var N_AUDIO = 6;          // output0.mp3 ... output5.mp3 (optional)
-	var AUDIO_DELAY = 3000;   // ms between two messages
+	var MESSAGE_DELAY = 3000; // ms between two messages
+	var settings = Messages.load(); // see messages.html
+	var messages = settings.messages.filter(function (m) { return m; });
 
 	var guy = new Guy({ 'position': 'absolute', 'x': 350, 'y': 38, 'scale': 5 });
 
@@ -43,6 +47,7 @@
 		var canvas = document.getElementById("canvas-blended");
 		var button = document.getElementById("start-button");
 		button.disabled = true;
+		Messages.unlock(); // speech must first be triggered from a click
 		setStatus("");
 
 		var camMotion = CamMotion.Engine({
@@ -70,20 +75,17 @@
 		});
 
 		var lastMessageTime = 0;
-		var i_audio = 0;
+		var i_message = 0;
 		camMotion.on("frame", function () {
 			var point = camMotion.getMovementPoint(true);
 			if (camMotion.getAverageMovement(point.x - point.r / 2, point.y - point.r / 2, point.r, point.r) > 2) {
 				window.dispatchEvent(new CustomEvent('camMotion', { detail: { x: point.x, y: point.y } }));
 
 				var now = Date.now();
-				if (now - lastMessageTime > AUDIO_DELAY) {
+				if (messages.length && now - lastMessageTime > MESSAGE_DELAY && Messages.supported() && !window.speechSynthesis.speaking) {
 					lastMessageTime = now;
-					var audio = new Audio('output' + i_audio + '.mp3');
-					i_audio = (i_audio + 1) % N_AUDIO;
-					// Audio files are optional: ignore missing files / blocked playback.
-					var p = audio.play();
-					if (p && p.catch) { p.catch(function (err) { console.log("audio not played:", err.message); }); }
+					Messages.speak(messages[i_message], settings.voice);
+					i_message = (i_message + 1) % messages.length;
 				}
 			}
 		});

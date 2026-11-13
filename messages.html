@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BB messages</title>
+	<style>
+		body { font-family: sans-serif; max-width: 40em; margin: 2em auto; padding: 0 16px; color: #1B1918; background: #fff; }
+		h1 { font-size: 1.6em; }
+		.row { display: flex; gap: 0.5em; margin: 0.5em 0; align-items: center; }
+		.row label { width: 1.5em; font-weight: bold; }
+		.row input { flex: 1; min-width: 0; font-size: 1em; padding: 0.4em; }
+		button, select { font-size: 1em; padding: 0.4em 0.8em; cursor: pointer; }
+		.actions { margin-top: 1.2em; display: flex; flex-wrap: wrap; gap: 0.5em; }
+		#status { margin-top: 1em; min-height: 1.2em; color: #060; }
+		#share { width: 100%; margin-top: 0.5em; font-size: 0.85em; padding: 0.4em; box-sizing: border-box; }
+		.hint { color: #555; font-size: 0.9em; }
+	</style>
+</head>
+<body>
+	<h1>Les messages de BB</h1>
+	<p class="hint">Quand le smiley te voit bouger, il dit ces messages l'un après l'autre (au plus un toutes les 3 secondes).
+		Laisse une case vide pour la sauter.</p>
+
+	<form id="form">
+		<div id="rows"></div>
+		<div class="row">
+			<label for="voice" style="width:auto">Voix&nbsp;:</label>
+			<select id="voice"></select>
+		</div>
+		<div class="actions">
+			<button type="submit">Enregistrer</button>
+			<button type="button" id="reset">Messages par défaut</button>
+			<button type="button" id="go">Enregistrer et lancer BB</button>
+		</div>
+	</form>
+	<div id="status"></div>
+
+	<p class="hint">Les messages sont enregistrés dans ce navigateur. Pour les utiliser sur un autre appareil, ouvre ce lien&nbsp;:</p>
+	<input id="share" readonly>
+
+	<script src="messages.js"></script>
+	<script>
+	var rows = document.getElementById("rows");
+	var voiceSelect = document.getElementById("voice");
+	var statusEl = document.getElementById("status");
+	var data = Messages.load();
+
+	for (var i = 0; i < Messages.COUNT; i++) {
+		var row = document.createElement("div");
+		row.className = "row";
+		row.innerHTML = '<label for="m' + i + '">' + (i + 1) + '</label>' +
+			'<input id="m' + i + '" type="text" maxlength="200">' +
+			'<button type="button" data-i="' + i + '">▶ Écouter</button>';
+		rows.appendChild(row);
+		document.getElementById("m" + i).value = data.messages[i];
+	}
+
+	function current() {
+		var messages = [];
+		for (var i = 0; i < Messages.COUNT; i++) {
+			messages.push(document.getElementById("m" + i).value.trim());
+		}
+		return { messages: messages, voice: voiceSelect.value };
+	}
+
+	function updateShare() {
+		document.getElementById("share").value = Messages.shareUrl(current(), "BB-is-watching-you.html");
+	}
+
+	function fillVoices() {
+		var voices = Messages.frenchVoices();
+		voiceSelect.innerHTML = "";
+		if (!voices.length) {
+			voiceSelect.add(new Option(Messages.supported() ? "Voix française par défaut" : "Synthèse vocale non disponible", ""));
+		}
+		voices.forEach(function (v) { voiceSelect.add(new Option(v.name + " (" + v.lang + ")", v.name)); });
+		voiceSelect.value = data.voice;
+		if (voiceSelect.selectedIndex < 0) { voiceSelect.selectedIndex = 0; }
+		updateShare();
+	}
+	fillVoices();
+	if (Messages.supported()) { window.speechSynthesis.addEventListener("voiceschanged", fillVoices); }
+
+	function save() {
+		data = current();
+		statusEl.textContent = Messages.save(data) ? "Messages enregistrés." :
+			"Impossible d'enregistrer dans ce navigateur : utilise le lien ci-dessous.";
+		updateShare();
+	}
+
+	rows.addEventListener("click", function (e) {
+		var i = e.target.getAttribute("data-i");
+		if (i !== null) { Messages.speak(document.getElementById("m" + i).value.trim(), voiceSelect.value); }
+	});
+	rows.addEventListener("input", updateShare);
+	voiceSelect.addEventListener("change", updateShare);
+	document.getElementById("form").addEventListener("submit", function (e) { e.preventDefault(); save(); });
+	document.getElementById("reset").addEventListener("click", function () {
+		Messages.DEFAULTS.forEach(function (m, i) { document.getElementById("m" + i).value = m; });
+		updateShare();
+	});
+	document.getElementById("go").addEventListener("click", function () {
+		save();
+		window.location.href = Messages.shareUrl(data, "BB-is-watching-you.html");
+	});
+	</script>
+</body>
+</html>
