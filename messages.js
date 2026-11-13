@@ -133,10 +133,26 @@ var Messages = (function () {
 	/** True while a message started by speak() is being spoken. */
 	function isBusy() { return busy; }
 
+	function linuxHint() {
+		var ua = navigator.userAgent;
+		var test = " Teste d'abord dans un terminal : spd-say -l fr bonjour " +
+			"(si tu n'entends rien, installe speech-dispatcher-espeak-ng).";
+		if (/Firefox\//.test(ua)) {
+			return "Firefox ne trouve aucune voix." + test +
+				" Si Firefox est installé en snap ou en Flatpak (Ubuntu), son bac à sable peut bloquer " +
+				"speech-dispatcher : essaie une version .deb de Firefox, ou Chrome lancé comme indiqué plus bas.";
+		}
+		return "Chrome/Chromium ne trouve aucune voix : sous Linux, il faut le lancer avec l'option " +
+			"--enable-speech-dispatcher (ferme d'abord toutes ses fenêtres), par exemple : " +
+			"google-chrome --enable-speech-dispatcher." + test;
+	}
+
 	function voiceHint() {
 		if (!allVoices().length) {
-			return "Aucune voix n'est installée pour ce navigateur " +
-				"(sous Linux, installe speech-dispatcher ; sinon essaie Chrome, Edge ou Safari).";
+			if (/Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent)) {
+				return linuxHint();
+			}
+			return "Aucune voix n'est installée pour ce navigateur : essaie Chrome, Edge ou Safari.";
 		}
 		if (!frenchVoices().length) {
 			return "Aucune voix française n'est installée : ajoute-en une dans les réglages du système.";
