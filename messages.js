@@ -60,35 +60,110 @@ var Messages = (function () {
 		return "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 	}
 
+	function allVoices() {
+		return supported() ? window.speechSynthesis.getVoices() : [];
+	}
+
 	/** French voices available in this browser (may be empty until "voiceschanged"). */
 	function frenchVoices() {
-		if (!supported()) { return []; }
-		return window.speechSynthesis.getVoices().filter(function (v) {
-			return v.lang && v.lang.toLowerCase().indexOf("fr") === 0;
+		return allVoices().filter(function (v) {
+			return v.lang && v.lang.toLowerCase().replace("_", "-").indexOf("fr") === 0;
 		});
 	}
 
-	function speak(text, voiceName) {
-		if (!supported() || !text) { return; }
-		var u = new SpeechSynthesisUtterance(text);
-		u.lang = LANG;
-		var voices = frenchVoices();
-		var voice = voices.filter(function (v) { return v.name === voiceName; })[0] || voices[0];
-		if (voice) { u.voice = voice; }
-		window.speechSynthesis.cancel();
-		window.speechSynthesis.speak(u);
+	/** Make sure the voice list starts loading (Chrome fills it asynchronously). */
+	function loadVoices() {
+		allVoices();
 	}
 
-	/** Some browsers (Safari) only allow speech after a first call inside a click. */
-	function unlock() {
-		if (!supported()) { return; }
-		var u = new SpeechSynthesisUtterance("");
-		u.volume = 0;
-		window.speechSynthesis.speak(u);
+	function pickVoice(voiceName) {
+		var voices = frenchVoices();
+		return voices.filter(function (v) { return v.name === voiceName; })[0] || voices[0] || null;
+	}
+
+	// Chrome may garbage-collect an utterance before it is spoken (and then
+	// never speaks it): keep references to the utterances in progress.
+	var inProgress = [];
+	var busy = false;
+
+	/**
+	 * Speak a text in French. `report(state, detail)` is optional and is called
+	 * with "start", "end", "error" (detail = error name) or "silent" when the
+	 * browser did not start speaking within 3 seconds.
+	 */
+	function speak(text, voiceName, report) {
+		report = report || function () {};
+		if (!supported()) { report("error", "unsupported"); return; }
+		if (!text) { return; }
+		var u = new SpeechSynthesisUtterance(text);
+		u.lang = LANG;
+		u.volume = 1;
+		var voice = pickVoice(voiceName);
+		if (voice) { u.voice = voice; }
+
+		var started = false, done = false;
+		function finish(state, detail) {
+			if (done) { return; }
+			done = true;
+			busy = false;
+			var i = inProgress.indexOf(u);
+			if (i >= 0) { inProgress.splice(i, 1); }
+			report(state, detail);
+		}
+		u.onstart = function () { started = true; report("start"); };
+		u.onend = function () { finish("end"); };
+		u.onerror = function (e) { finish("error", e.error); };
+		// Never stay blocked if the browser fires no event at all.
+		setTimeout(function () { if (!started) { finish("silent"); } }, 3000);
+		setTimeout(function () { finish("end"); }, 20000);
+
+		busy = true;
+		inProgress.push(u);
+		var synth = window.speechSynthesis;
+		if (synth.speaking || synth.pending) {
+			synth.cancel();
+			// Chrome drops an utterance spoken right after cancel(): wait a bit.
+			setTimeout(function () { synth.resume(); synth.speak(u); }, 100);
+		} else {
+			synth.resume(); // Chrome sometimes leaves the engine paused
+			synth.speak(u);
+		}
+	}
+
+	/** True while a message started by speak() is being spoken. */
+	function isBusy() { return busy; }
+
+	function voiceHint() {
+		if (!allVoices().length) {
+			return "Aucune voix n'est installée pour ce navigateur " +
+				"(sous Linux, installe speech-dispatcher ; sinon essaie Chrome, Edge ou Safari).";
+		}
+		if (!frenchVoices().length) {
+			return "Aucune voix française n'est installée : ajoute-en une dans les réglages du système.";
+		}
+		return "Vérifie le volume, la sortie audio et que l'onglet n'est pas en sourdine.";
+	}
+
+	/** Short French description of a speak() report, or "" if all is fine. */
+	function describe(state, detail) {
+		if (state === "error" && detail === "unsupported") {
+			return "Ce navigateur ne sait pas faire de synthèse vocale.";
+		}
+		if (state === "error" && detail === "not-allowed") {
+			return "Le navigateur a bloqué le son : clique d'abord sur la page.";
+		}
+		if (state === "error") {
+			return "Erreur de synthèse vocale (" + detail + "). " + voiceHint();
+		}
+		if (state === "silent") {
+			return "Le navigateur n'a pas démarré la voix. " + voiceHint();
+		}
+		return "";
 	}
 
 	return {
 		COUNT: COUNT, DEFAULTS: DEFAULTS, load: load, save: save, shareUrl: shareUrl,
-		supported: supported, frenchVoices: frenchVoices, speak: speak, unlock: unlock
+		supported: supported, frenchVoices: frenchVoices, loadVoices: loadVoices,
+		speak: speak, isBusy: isBusy, describe: describe, voiceHint: voiceHint
 	};
 })();
